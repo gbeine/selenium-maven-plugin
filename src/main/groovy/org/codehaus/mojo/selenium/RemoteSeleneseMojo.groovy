@@ -19,7 +19,11 @@
 
 package org.codehaus.mojo.selenium
 
-import com.thoughtworks.selenium.HttpCommandProcessor
+import de.gbeine.selenium.results.HtmlResult;
+
+import java.io.FileWriter;
+
+import de.gbeine.selenium.HtmlRemoteCommandProcessor
 import de.gbeine.selenium.HtmlRemoteClient
 import de.gbeine.selenium.TestSuite
 import de.gbeine.selenium.TestSuiteRunner
@@ -147,21 +151,21 @@ class RemoteSeleneseMojo
         
         ant.mkdir(dir: results.parentFile)
 
-		// TODO:
-		// * create report
-		
-        def result = 'FAILED'
 		def runner = new TestSuiteRunner()
 		def testSuite = new TestSuite(suite.absolutePath)
-		def httpCommandProcessor = new HttpCommandProcessor(host, port, browser, startURL.toString())
-		def client = new HtmlRemoteClient(httpCommandProcessor)
+		def commandProcessor = new HtmlRemoteCommandProcessor(host, port, browser, startURL.toString())
+		def client = new HtmlRemoteClient(commandProcessor)
 		
-		httpCommandProcessor.start();
-		result = runner.run(testSuite, client).toUpperCase();
-		httpCommandProcessor.stop();
+		commandProcessor.start();
+		def result = runner.run(testSuite, client);
+		commandProcessor.stop();
 		
-        if (result != 'PASSED') {
-            fail("Tests failed with status ${result}, see result file for details: ${results.absolutePath}")
+		new HtmlResult().writeResults(result, new FileWriter(results));
+		
+		def status = result.getStatus().toString().toUpperCase(); 
+		
+        if (status != 'PASSED') {
+            fail("Tests failed with status ${status}, see result file for details: ${results.absolutePath}")
         }
     }
     
